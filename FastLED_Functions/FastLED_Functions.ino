@@ -28,13 +28,17 @@ SMARTMATRIX_ALLOCATE_BUFFERS(matrix, kMatrixWidth, kMatrixHeight, kRefreshDepth,
 SMARTMATRIX_ALLOCATE_BACKGROUND_LAYER(backgroundLayer, kMatrixWidth, kMatrixHeight, COLOR_DEPTH, kBackgroundLayerOptions);
 
 uint8_t hue = 0;
+uint8_t r = 0;
+uint8_t g = 0;
+uint8_t b = 0;
 
 void setup() {
   Serial.println("resetting!");
   Serial.begin(115200);
   delay(3000);
 
-  matrix.addLayer(&backgroundLayer); 
+  matrix.addLayer(&backgroundLayer);
+//  matrix.setRotation(rotation270);
   matrix.begin();
 
   backgroundLayer.setBrightness(25);
@@ -46,23 +50,36 @@ void loop() {
 
   rgb24 *buffer = backgroundLayer.backBuffer();
 
-  for(int i = kMatrixWidth - 1; i >= 0; i--) {
-    for(int j = kMatrixHeight - 1; j >= 0; j--) {
+  for(int i = 0; i < kMatrixWidth; i++) {
+    for(int j = 0; j < kMatrixHeight; j++) {
       // We use the value at the (i,j) coordinate in the noise
       // array for our brightness, and the flipped value from (j,i)
       // for our pixel's hue.
-      buffer[kMatrixWidth*j + i] = CRGB(CHSV(hue+i+j,255,255));
+      CHSV HSVcolor = CHSV(hue+(i/2)+(j/2),255,255);
+      CRGB RGBcolor;
+      hsv2rgb_rainbow(HSVcolor, RGBcolor);
+//      hsv2rgb_spectrum(HSVcolor, RGBcolor);
+      if (( i + j != hue) && (i*2 + j*2 != hue)){
+        RGBcolor = CRGB::Black;
+      }
+      buffer[kMatrixWidth*j + i] = RGBcolor;
+//      buffer[kMatrixWidth*j + i] = CRGB(r, g, b);
 
       // You can also explore other ways to constrain the hue used, like below
       // buffer[kMatrixHeight*j + i] = CRGB(CHSV(ihue + (noise[j][i]>>2),255,noise[i][j]));
     }
   }
-  hue += 1;
 
   // buffer is filled completely each time, use swapBuffers without buffer copy to save CPU cycles
   backgroundLayer.swapBuffers(false);
 //  matrix.countFPS();      // print the loop() frames per second to Serial
   countFPS();
+
+  EVERY_N_MILLISECONDS( 5 ) { hue--; }
+
+//  EVERY_N_MILLISECONDS( 20 ) { r++; }
+//  EVERY_N_MILLISECONDS( 30 ) { g++; }
+//  EVERY_N_MILLISECONDS( 40 ) { b++; }
 }
 
 void countFPS() {
