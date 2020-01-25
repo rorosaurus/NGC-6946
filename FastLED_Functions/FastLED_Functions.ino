@@ -55,13 +55,15 @@ void loop() {
       // We use the value at the (i,j) coordinate in the noise
       // array for our brightness, and the flipped value from (j,i)
       // for our pixel's hue.
-      CHSV HSVcolor = CHSV(hue+(i/2)+(j/2),255,255);
+      CHSV HSVcolor = CHSV(hue + sqrt(pow(i-kMatrixWidth,2) + pow(j-kMatrixHeight,2)) ,255,255);
       CRGB RGBcolor;
-      hsv2rgb_rainbow(HSVcolor, RGBcolor);
-//      hsv2rgb_spectrum(HSVcolor, RGBcolor);
-      if (( i + j != hue) && (i*2 + j*2 != hue)){
-        RGBcolor = CRGB::Black;
-      }
+//      RGBcolor = CRGB::Black;
+      //      hsv2rgb_spectrum(HSVcolor, RGBcolor);
+
+//      if (-1 <= distanceToCenter(i, j) - hue <= 1){// ||
+          //(-2 <= i*2 + j*2 - hue <= 2)){
+        hsv2rgb_rainbow(HSVcolor, RGBcolor);
+//      }
       buffer[kMatrixWidth*j + i] = RGBcolor;
 //      buffer[kMatrixWidth*j + i] = CRGB(r, g, b);
 
@@ -80,6 +82,11 @@ void loop() {
 //  EVERY_N_MILLISECONDS( 20 ) { r++; }
 //  EVERY_N_MILLISECONDS( 30 ) { g++; }
 //  EVERY_N_MILLISECONDS( 40 ) { b++; }
+}
+
+double distanceToCenter(int x, int y) {
+  // equation for a circle centered at matrixwidth, matrixheight, solved for r
+  return sqrt(pow(x-kMatrixWidth, 2) + pow(y-kMatrixHeight,2));
 }
 
 void countFPS() {
