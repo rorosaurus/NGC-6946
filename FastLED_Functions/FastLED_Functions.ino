@@ -28,9 +28,7 @@ SMARTMATRIX_ALLOCATE_BUFFERS(matrix, kMatrixWidth, kMatrixHeight, kRefreshDepth,
 SMARTMATRIX_ALLOCATE_BACKGROUND_LAYER(backgroundLayer, kMatrixWidth, kMatrixHeight, COLOR_DEPTH, kBackgroundLayerOptions);
 
 uint8_t hue = 0;
-uint8_t r = 0;
-uint8_t g = 0;
-uint8_t b = 0;
+uint8_t pulse = 0;
 
 void setup() {
   Serial.println("resetting!");
@@ -50,25 +48,29 @@ void loop() {
 
   rgb24 *buffer = backgroundLayer.backBuffer();
 
+
+  CRGB RGBcolor;
+  CHSV HSVcolor;
+  
   for(int i = 0; i < kMatrixWidth; i++) {
     for(int j = 0; j < kMatrixHeight; j++) {
-      // We use the value at the (i,j) coordinate in the noise
-      // array for our brightness, and the flipped value from (j,i)
-      // for our pixel's hue.
-      CHSV HSVcolor = CHSV(hue + sqrt(pow(i-kMatrixWidth,2) + pow(j-kMatrixHeight,2)) ,255,255);
-      CRGB RGBcolor;
-//      RGBcolor = CRGB::Black;
-      //      hsv2rgb_spectrum(HSVcolor, RGBcolor);
+      // how far are we from the center point?
+      float distToCenter = distanceToCenter(i, j);
+      
+      // generate our polar coordinate color
+      HSVcolor = CHSV(hue + distToCenter,255,255);
+            
+      // default to black
+      RGBcolor = CRGB::Black;
 
-//      if (-1 <= distanceToCenter(i, j) - hue <= 1){// ||
-          //(-2 <= i*2 + j*2 - hue <= 2)){
+      // unless..
+      if ((pulse <= distToCenter && distToCenter <= pulse+1+(20/distToCenter)) ||
+         (((pulse-27)*1.5) <= distToCenter && distToCenter <= ((pulse-27)*1.5)+1+(20/distToCenter))) {
         hsv2rgb_rainbow(HSVcolor, RGBcolor);
-//      }
+//        hsv2rgb_spectrum(HSVcolor, RGBcolor);
+      }
+      // write the colors
       buffer[kMatrixWidth*j + i] = RGBcolor;
-//      buffer[kMatrixWidth*j + i] = CRGB(r, g, b);
-
-      // You can also explore other ways to constrain the hue used, like below
-      // buffer[kMatrixHeight*j + i] = CRGB(CHSV(ihue + (noise[j][i]>>2),255,noise[i][j]));
     }
   }
 
@@ -77,14 +79,11 @@ void loop() {
 //  matrix.countFPS();      // print the loop() frames per second to Serial
   countFPS();
 
-  EVERY_N_MILLISECONDS( 5 ) { hue--; }
-
-//  EVERY_N_MILLISECONDS( 20 ) { r++; }
-//  EVERY_N_MILLISECONDS( 30 ) { g++; }
-//  EVERY_N_MILLISECONDS( 40 ) { b++; }
+  EVERY_N_MILLISECONDS( 4 ) { hue -= 4; }
+  EVERY_N_MILLISECONDS( 7 ) { pulse += 2; if (pulse > 96) pulse = 0;}
 }
 
-double distanceToCenter(int x, int y) {
+float distanceToCenter(int x, int y) {
   // equation for a circle centered at matrixwidth, matrixheight, solved for r
   return sqrt(pow(x-kMatrixWidth, 2) + pow(y-kMatrixHeight,2));
 }
