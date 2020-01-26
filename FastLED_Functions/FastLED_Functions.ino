@@ -30,13 +30,29 @@ SMARTMATRIX_ALLOCATE_BACKGROUND_LAYER(backgroundLayer, kMatrixWidth, kMatrixHeig
 uint8_t hue = 0;
 uint8_t pulse = 0;
 
+uint8_t distanceToCenterLookup[kMatrixWidth][kMatrixHeight];
+
+void preCalcLookups() {
+  for (int i=0; i<kMatrixWidth; i++){
+    for (int j=0; j<kMatrixHeight; j++){
+      distanceToCenterLookup[i][j] = distanceToCenter(i, j);
+    }
+  }
+}
+
+float distanceToCenter(int x, int y) {
+  // equation for a circle centered at matrixwidth, matrixheight, solved for r
+  return sqrt(pow(x-kMatrixWidth, 2) + pow(y-kMatrixHeight,2));
+}
+
 void setup() {
   Serial.println("resetting!");
   Serial.begin(115200);
-  delay(3000);
-
+    
+  preCalcLookups();
+  
   matrix.addLayer(&backgroundLayer);
-//  matrix.setRotation(rotation270);
+//  matrix.setRotation(rotation270); // doesn't work for some reason?
   matrix.begin();
 
   backgroundLayer.setBrightness(25);
@@ -55,7 +71,7 @@ void loop() {
   for(int i = 0; i < kMatrixWidth; i++) {
     for(int j = 0; j < kMatrixHeight; j++) {
       // how far are we from the center point?
-      float distToCenter = distanceToCenter(i, j);
+      uint8_t distToCenter = distanceToCenterLookup[i][j];
       
       // generate our polar coordinate color
       HSVcolor = CHSV(hue + distToCenter,255,255);
@@ -80,12 +96,7 @@ void loop() {
   countFPS();
 
   EVERY_N_MILLISECONDS( 4 ) { hue -= 4; }
-  EVERY_N_MILLISECONDS( 7 ) { pulse += 2; if (pulse > 96) pulse = 0;}
-}
-
-float distanceToCenter(int x, int y) {
-  // equation for a circle centered at matrixwidth, matrixheight, solved for r
-  return sqrt(pow(x-kMatrixWidth, 2) + pow(y-kMatrixHeight,2));
+  EVERY_N_MILLISECONDS( 7 ) { pulse += 1; if (pulse > 96) pulse = 0;}
 }
 
 void countFPS() {
